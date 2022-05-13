@@ -78,17 +78,17 @@ runs:
 
     - name: Set up Docker Context for Buildx
       id: buildx-context
-      if: ${{ setup_docker == 'true' }}
+      if: ${{ inputs.setup_docker == 'true' }}
       run: |
         docker context create builders
       shell: bash
 
     - name: Set up QEMU
-      if: ${{ setup_docker == 'true' }}
+      if: ${{ inputs.setup_docker == 'true' }}
       uses: docker/setup-qemu-action@v1
 
     - name: Set up Docker Buildx
-      if: ${{ setup_docker == 'true' }}
+      if: ${{ inputs.setup_docker == 'true' }}
       uses: docker/setup-buildx-action@v2
       with:
         version: latest
