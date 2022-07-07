@@ -84,7 +84,7 @@ runs:
   steps:
     - name: Checkout
       uses: actions/checkout@v2
-      if: ${{ inputs.checkout_fetch_depth ! null }}
+      if: ${{ inputs.checkout_fetch_depth != null }}
       with:
         fetch-depth: ${{ inputs.checkout_fetch_depth }}
       
