@@ -118,7 +118,10 @@ outputs:
     value: ${{ steps.vars.outputs.create_ecr_repo }}
   semantic_version_tag:
     description: Results of Semantic Version
-    value: ${{ steps.semantic-version-tag.outputs.tag }}
+    value: ${{ steps.semantic-versioning.outputs.version }}
+  semantic_version_timestamp_tag:
+    description: Results of Semantic Version with Timestamp
+    value: ${{ steps.semantic-version-tag-timestamp.outputs.tag }}
   # tag_target:
   #   description: Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr]
   #   value: ${{ steps.tag-target.outputs.tag_target }}
@@ -163,17 +166,10 @@ runs:
         minor_pattern: ${{ inputs.semantic_version_minor_pattern }}
         format: ${{ inputs.semantic_version_format }}
         bump_each_commit: ${{ inputs.semantic_version_bump_each_commit }}
-
-    - name: Semantic Version Tag
-      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' && !inputs.semantic_version_include_timestamp }}
-      id: semantic-version-tag
-      continue-on-error: true
-      run: echo "::set-output name=tag::${{ steps.semantic-versioning.outputs.version }}"
-      shell: bash
     
     - name: Semantic Version Tag - Timestamp
       if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' && inputs.semantic_version_include_timestamp }}
-      id: semantic-version-tag
+      id: semantic-version-tag-timestamp
       continue-on-error: true
       run: echo "::set-output name=tag::${{ steps.semantic-versioning.outputs.version }}-$(date +%s)"
       shell: bash
