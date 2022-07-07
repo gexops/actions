@@ -67,7 +67,7 @@ inputs:
   checkout_fetch_depth:
     description: "Checkout Fetch Depth"
     required: false
-    default: '1'
+    default: ${{ 1 }}
   
   create_tag_target:
     description: "Creates Tag Target. Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr] if value is set as 'rc'"
