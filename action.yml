@@ -69,6 +69,41 @@ inputs:
     required: false
     default: ${{ 1 }}
   
+  semantic_version_enabled:
+    description: "Enable Semantic Versioning"
+    required: false
+    default: 'false'
+
+  semantic_version_tag_prefix:
+    description: "Semantic Versioning: Tag Prefix"
+    required: false
+    default: 'v'
+  
+  semantic_version_major_pattern:
+    description: "Semantic Versioning: Major Release Pattern v${major}.x.x"
+    required: false
+    default: "Release:"
+  
+  semantic_version_minor_pattern:
+    description: "Semantic Versioning: Minor Release Pattern vx.${minor}.x"
+    required: false
+    default: 'feat:'
+  
+  semantic_version_format:
+    description: "Semantic Versioning: Format v${major}.${minor}.${patch}"
+    required: false
+    default: 'v${major}.${minor}.${patch}'
+
+  semantic_version_bump_each_commit:
+    description: "Semantic Versioning: Bump Each Commit"
+    required: false
+    default: ${{ true }}
+
+  semantic_version_include_timestamp:
+    description: "Semantic Versioning: Include Timestamp"
+    required: false
+    default: ${{ true }}
+
   create_tag_target:
     description: "Creates Tag Target. Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr] if value is set as 'rc'"
     required: false
@@ -81,6 +116,9 @@ outputs:
   ecr_repository_uri:
     description: URI of the repository, i.e. ACCOUNT.dkr.ecr.REGION.amazonaws.com/NAME
     value: ${{ steps.vars.outputs.create_ecr_repo }}
+  semantic_version_tag:
+    description: Results of Semantic Version
+    value: ${{ steps.semantic-version-tag.outputs.tag }}
   # tag_target:
   #   description: Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr]
   #   value: ${{ steps.tag-target.outputs.tag_target }}
@@ -89,12 +127,18 @@ runs:
   using: "composite"
   steps:
     - name: Checkout
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled != 'true' }}
       uses: actions/checkout@v2
-      #if: ${{ inputs.checkout_fetch_depth != null }}
-      if: ${{ inputs.checkout_enabled == 'true' }}
       with:
         ref: ${{ github.ref }}
         fetch-depth: ${{ inputs.checkout_fetch_depth }}
+    
+    - name: Checkout - Semantic Versioning
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' }}
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 0
       
     # - name: Checkout
     #   uses: actions/checkout@v2
@@ -108,6 +152,33 @@ runs:
         echo ::set-output name=sha_short::${GITHUB_SHA::7}
       shell: bash
     
+    - name: Semantic versioning
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' }}
+      id: semantic-version
+      uses: PaulHatch/semantic-version@v4.0.2
+      with:
+        branch: ${{ github.ref }}
+        tag_prefix: ${{ inputs.semantic_version_tag_prefix }}
+        major_pattern: ${{ inputs.semantic_version_major_pattern }}
+        minor_pattern: ${{ inputs.semantic_version_minor_pattern }}
+        format: ${{ inputs.semantic_version_format }}
+        bump_each_commit: ${{ inputs.semantic_version_bump_each_commit }}
+
+    - name: Semantic Version Tag
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' && !inputs.semantic_version_include_timestamp }}
+      id: semantic-version-tag
+      continue-on-error: true
+      run: echo "::set-output name=tag::${{ steps.semantic-versioning.outputs.version }}"
+      shell: bash
+    
+    - name: Semantic Version Tag - Timestamp
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' && inputs.semantic_version_include_timestamp }}
+      id: semantic-version-tag
+      continue-on-error: true
+      run: echo "::set-output name=tag::${{ steps.semantic-versioning.outputs.version }}-$(date +%s)"
+      shell: bash
+      
+
     # - uses: jungwinter/split@v2
     #   id: split-tag
     #   if: ${{ inputs.create_tag_target != '' && github.ref_name != 'main' }}
