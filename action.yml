@@ -53,6 +53,20 @@ inputs:
     description: "Sets up Docker Context, QEMU and Buildx"
     required: false
     default: 'true'
+  
+  prepull_image:
+    description: "Fetches an image prior to build"
+    required: false
+    default: ''
+  
+  checkout_fetch_depth:
+    description: "Checkout Fetch Depth"
+    required: false
+  
+  create_tag_target:
+    description: "Creates Tag Target. Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr] if value is set as 'rc'"
+    required: false
+    default: ''
 
 outputs:
   sha_short:
@@ -61,12 +75,22 @@ outputs:
   ecr_repository_uri:
     description: URI of the repository, i.e. ACCOUNT.dkr.ecr.REGION.amazonaws.com/NAME
     value: ${{ steps.vars.outputs.create_ecr_repo }}
+  tag_target:
+    description: Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr]
+    value: ${{ steps.tag-target.outputs.tag_target }}
 
 runs:
   using: "composite"
   steps:
     - name: Checkout
       uses: actions/checkout@v2
+      if: ${{ inputs.checkout_fetch_depth ! null }}
+      with:
+        fetch-depth: ${{ inputs.checkout_fetch_depth }}
+      
+    - name: Checkout
+      uses: actions/checkout@v2
+      if: ${{ inputs.checkout_fetch_depth == null }}
       with:
         ref: ${{ github.ref }}
 
@@ -74,6 +98,20 @@ runs:
       id: vars
       run: |
         echo ::set-output name=sha_short::${GITHUB_SHA::7}
+      shell: bash
+    
+    - uses: jungwinter/split@v2
+      id: split-tag
+      if: ${{ inputs.create_tag_target != '' && github.ref_name != 'main' }}
+      with:
+        msg: ${{ github.ref_name }}
+        separator: '-'
+
+    - name: Create Tag Target
+      id: tag-target
+      if: ${{ inputs.create_tag_target != '' && github.ref_name != 'main' }}
+      continue-on-error: true
+      run: echo "::set-output name=tag_target::${{ steps.split-tag.outputs._0 }}-${{ inputs.create_tag_target }}-$(date +%s)-$(git rev-parse --short HEAD)"
       shell: bash
 
     - name: Set up Docker Context for Buildx
@@ -139,4 +177,13 @@ runs:
       if: ${{ inputs.aws_access_key_id != '' && inputs.aws_secret_access_key != '' &&  inputs.ecr_repository != '' }}
       with:
         repository: ${{ inputs.ecr_repository }}
+    
+    - name: Prepull Docker Image
+      id: prepull-docker-image
+      if: ${{ inputs.prepull_image != '' && inputs.setup_docker == 'true' }}
+      continue-on-error: true
+      run: |
+        docker pull ${{ inputs.prepull_image }}
+      shell: bash
+    
     
