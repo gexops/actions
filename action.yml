@@ -67,7 +67,7 @@ inputs:
   checkout_branch:
     description: "Which branch to checkout"
     required: false
-    default: ${{ github.ref }}
+    default: ''
 
   checkout_fetch_depth:
     description: "Checkout Fetch Depth"
@@ -134,12 +134,23 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Get Branch
+      id: checkout_ref
+      run: |
+        if [[ ${{ inputs.checkout_branch }} != "" ]]; then
+          echo ::set-output name=branch::${{ inputs.checkout_branch }}
+        else
+          echo ::set-output name=branch::${{ github.ref }}
+        fi
+      shell: bash
+
     - name: Checkout
       if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled != 'true' }}
       uses: actions/checkout@v2
       with:
         #ref: ${{ github.ref }}
-        ref: ${{ inputs.checkout_branch }}
+        #ref: ${{ inputs.checkout_branch }}
+        ref: ${{ steps.checkout_ref.outputs.branch }}
         fetch-depth: ${{ inputs.checkout_fetch_depth }}
     
     - name: Checkout - Semantic Versioning
@@ -147,7 +158,8 @@ runs:
       uses: actions/checkout@v2
       with:
         #ref: ${{ github.ref }}
-        ref: ${{ inputs.checkout_branch }}
+        #ref: ${{ inputs.checkout_branch }}
+        ref: ${{ steps.checkout_ref.outputs.branch }}
         fetch-depth: 0
       
     # - name: Checkout
@@ -168,7 +180,8 @@ runs:
       uses: PaulHatch/semantic-version@v4.0.2
       with:
         #branch: ${{ github.ref }}
-        branch: ${{ inputs.checkout_branch }}
+        #branch: ${{ inputs.checkout_branch }}
+        branch: ${{ steps.checkout_ref.outputs.branch }}
         tag_prefix: ${{ inputs.semantic_version_tag_prefix }}
         major_pattern: ${{ inputs.semantic_version_major_pattern }}
         minor_pattern: ${{ inputs.semantic_version_minor_pattern }}
