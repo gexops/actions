@@ -118,7 +118,7 @@ inputs:
     description: 'List of additional driver-specific options. (eg. image=moby/buildkit:master)'
     required: false
     default: |
-      moby/buildkit:master
+      image=moby/buildkit:master
   
   buildkitd-flags:
     description: 'Flags for buildkitd daemon'
