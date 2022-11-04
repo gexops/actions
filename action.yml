@@ -113,6 +113,17 @@ inputs:
     description: "Creates Tag Target. Creates a Tag Target based on Branch such as v0.0.8-rc-xxx -> v0.0.8-rc-[datetimestr] if value is set as 'rc'"
     required: false
     default: ''
+  
+  driver-opts:
+    description: 'List of additional driver-specific options. (eg. image=moby/buildkit:master)'
+    required: false
+    default: |
+      moby/buildkit:master
+  
+  buildkitd-flags:
+    description: 'Flags for buildkitd daemon'
+    default: '--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host'
+    required: false
 
 outputs:
   sha_short:
@@ -230,6 +241,8 @@ runs:
       with:
         version: latest
         endpoint: builders
+        driver-opts: ${{ inputs.driver-opts }}
+        driver: ${{ inputs.driver }}
     
     - name: Login to DockerHub
       if: ${{ inputs.username != '' && inputs.password != '' }}
