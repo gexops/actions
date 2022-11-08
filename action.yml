@@ -64,6 +64,10 @@ inputs:
     required: false
     default: 'true'
   
+  checkout_repo:
+    description: 'Repository name with owner. For example, actions/checkout'
+    default: ${{ github.repository }}
+  
   checkout_branch:
     description: "Which branch to checkout"
     required: false
@@ -157,18 +161,20 @@ runs:
 
     - name: Checkout
       if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled != 'true' }}
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: ${{ github.ref }}
+        repository: ${{ inputs.checkout_repo }}
         #ref: ${{ inputs.checkout_branch }}
         #ref: ${{ steps.checkout_ref.outputs.branch }}
         fetch-depth: ${{ inputs.checkout_fetch_depth }}
     
     - name: Checkout - Semantic Versioning
       if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled == 'true' }}
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: ${{ github.ref }}
+        repository: ${{ inputs.checkout_repo }}
         #ref: ${{ inputs.checkout_branch }}
         #ref: ${{ steps.checkout_ref.outputs.branch }}
         fetch-depth: 0
