@@ -160,13 +160,21 @@ runs:
     #   shell: bash
 
     - name: Checkout
-      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled != 'true' }}
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled != 'true' && inputs.checkout_branch == '' }}
       uses: actions/checkout@v3
       with:
         ref: ${{ github.ref }}
         repository: ${{ inputs.checkout_repo }}
         #ref: ${{ inputs.checkout_branch }}
         #ref: ${{ steps.checkout_ref.outputs.branch }}
+        fetch-depth: ${{ inputs.checkout_fetch_depth }}
+
+    - name: Checkout - With Ref
+      if: ${{ inputs.checkout_enabled == 'true' && inputs.semantic_version_enabled != 'true' && inputs.checkout_branch != '' }}
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.checkout_repo }}
+        ref: ${{ inputs.checkout_branch }}
         fetch-depth: ${{ inputs.checkout_fetch_depth }}
     
     - name: Checkout - Semantic Versioning
